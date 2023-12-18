@@ -1,199 +1,611 @@
-$(function() {
- //some elements..
- var $ps_container = $('#ps_container'),
- $ps_image_wrapper  = $ps_container.find('.ps_image_wrapper'),
- $ps_next = $ps_container.find('.ps_next'),
- $ps_prev = $ps_container.find('.ps_prev'),
- $ps_nav = $ps_container.find('.ps_nav'),
- $tooltip = $ps_container.find('.ps_preview'),
- $ps_preview_wrapper = $tooltip.find('.ps_preview_wrapper'),
- $links = $ps_nav.children('li').not($tooltip),
- total_images = $links.length,
- currentHovered = -1,
- current = 0,
- $loader = $('#loader');
- 
- /*check if you are using a browser*/ 
- var ie  = false;
- if ($.browser.msie) {
- ie = true;//you are not!Anyway let's give it a try
- }
- if(!ie)
- $tooltip.css({
- opacity : 0
- }).show();
- 
- 
- /*first preload images (thumbs and large images)*/
- var loaded = 0;
- $links.each(function(i){
- var $link  = $(this);
- $link.find('a').preload({
- onComplete : function(){
- ++loaded;
- if(loaded == total_images){
- //all images preloaded,
- //show ps_container and initialize events
- $loader.hide();
- $ps_container.show();
- //when mouse enters the pages (the dots),
- //show the tooltip,
- //when mouse leaves hide the tooltip,
- //clicking on one will display the respective image 
- $links.bind('mouseenter',showTooltip)
-   .bind('mouseleave',hideTooltip)
-   .bind('click',showImage);
- //navigate through the images
- $ps_next.bind('click',nextImage);
- $ps_prev.bind('click',prevImage);
- }
- }
- });
- });
- 
- function showTooltip(){
- var $link = $(this),
- idx = $link.index(),
- linkOuterWidth = $link.outerWidth(),
- //this holds the left value for the next position
- //of the tooltip
- left = parseFloat(idx * linkOuterWidth) - $tooltip.width()/2 + linkOuterWidth/2,
- //the thumb image source
- $thumb = $link.find('a').attr('rel'),
- imageLeft;
- 
- //if we are not hovering the current one
- if(currentHovered != idx){
- //check if we will animate left->right or right->left
- if(currentHovered != -1){
- if(currentHovered < idx){
- imageLeft = 75;
- }
- else{
- imageLeft = -75;
- }
- }
- currentHovered = idx;
- 
- //the next thumb image to be shown in the tooltip
- var $newImage = $('<img/>').css('left','0px')
-    .attr('src',$thumb);
- 
- //if theres more than 1 image 
- //(if we would move the mouse too fast it would probably happen)
- //then remove the oldest one (:last)
- if($ps_preview_wrapper.children().length > 1)
- $ps_preview_wrapper.children(':last').remove();
- 
- //prepend the new image
- $ps_preview_wrapper.prepend($newImage);
- 
- var $tooltip_imgs = $ps_preview_wrapper.children(),
- tooltip_imgs_count = $tooltip_imgs.length;
- 
- //if theres 2 images on the tooltip
- //animate the current one out, and the new one in
- if(tooltip_imgs_count > 1){
- $tooltip_imgs.eq(tooltip_imgs_count-1)
-  .stop()
-  .animate({
- left:-imageLeft+'px'
-   },150,function(){
- //remove the old one
- $(this).remove();
-   });
- $tooltip_imgs.eq(0)
-  .css('left',imageLeft + 'px')
-  .stop()
-  .animate({
- left:'0px'
-   },150);
- }
- }
- //if we are not using a "browser", we just show the tooltip,
- //otherwise we fade it
- //
- if(ie)
- $tooltip.css('left',left + 'px').show();
- else
- $tooltip.stop()
- .animate({
- left : left + 'px',
- opacity : 1
- },150);
- }
- 
- function hideTooltip(){
- //hide / fade out the tooltip
- if(ie)
- $tooltip.hide();
- else
- $tooltip.stop()
-     .animate({
- opacity : 0
- },150);
- }
- 
- function showImage(e){
- var $link = $(this),
- idx = $link.index(),
- $image = $link.find('a').attr('href'),
- $currentImage  = $ps_image_wrapper.find('img'),
- currentImageWidth = $currentImage.width();
- 
- //if we click the current one return
- if(current == idx) return false;
- 
- //add class selected to the current page / dot
- $links.eq(current).removeClass('selected');
- $link.addClass('selected');
- 
- //the new image element
- var $newImage = $('<img/>').css('left',currentImageWidth + 'px')
-    .attr('src',$image);
- 
- //if the wrapper has more than one image, remove oldest
- if($ps_image_wrapper.children().length > 1)
- $ps_image_wrapper.children(':last').remove();
- 
- //prepend the new image
- $ps_image_wrapper.prepend($newImage);
- 
- //the new image width. 
- //This will be the new width of the ps_image_wrapper
- var newImageWidth = $newImage.width();
- 
- //check animation direction
- if(current > idx){
- $newImage.css('left',-newImageWidth + 'px');
- currentImageWidth = -newImageWidth;
- } 
- current = idx;
- //animate the new width of the ps_image_wrapper 
- //(same like new image width)
- $ps_image_wrapper.stop().animate({
-     width : newImageWidth + 'px'
- },350);
- //animate the new image in
- $newImage.stop().animate({
-     left : '0px'
- },350);
- //animate the old image out
- $currentImage.stop().animate({
-     left : -currentImageWidth + 'px'
- },350);
- 
- e.preventDefault();
- } 
- 
- function nextImage(){
- if(current < total_images){
- $links.eq(current+1).trigger('click');
- }
- }
- function prevImage(){
- if(current > 0){
- $links.eq(current-1).trigger('click');
- }
- }
-});
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta property="og:url" content="https://molezz.net/app" />
+<meta property="og:title" content="应用 - molezz BAR" />
+<meta property="og:author" content="molezz" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-12-21T12:07:00+00:00" />
+<meta property="article:published_first" content="molezz BAR, https://molezz.net/app" />
+<meta name="keywords" content>
+<meta name="description" content="windows开源推荐stroke好用的鼠标手势，右键自定义autohotkey自定义键盘组合，比如我用RALT结合wasdqe实现上下左右home end， 更适合精简键盘如68这类按键少的t..." />
+<title>应用 - molezz BAR</title>
+<link rel="alternate" type="application/rss+xml" title="应用 &raquo; molezz BAR &raquo; RSS 2.0" href="https://molezz.net/feed/app" />
+<link rel="alternate" type="application/rdf+xml" title="应用 &raquo; molezz BAR &raquo; RSS 1.0" href="https://molezz.net/feed/rss/app" />
+<link rel="alternate" type="application/atom+xml" title="应用 &raquo; molezz BAR &raquo; ATOM 1.0" href="https://molezz.net/feed/atom/app" />
+<script type="text/javascript">
+(function () {
+    var event = document.addEventListener ? {
+        add: 'addEventListener',
+        triggers: ['scroll', 'mousemove', 'keyup', 'touchstart'],
+        load: 'DOMContentLoaded'
+    } : {
+        add: 'attachEvent',
+        triggers: ['onfocus', 'onmousemove', 'onkeyup', 'ontouchstart'],
+        load: 'onload'
+    }, added = false;
+
+    document[event.add](event.load, function () {
+        var r = document.getElementById('respond-page-897'),
+            input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = '_';
+        input.value = (function () {
+    var _6j1c = //'muX'
+'5'+//'Kc'
+'4b'+//'Sa'
+'e92'+//'L'
+'L'+'2'//'8g'
++//'3'
+'9'+//'L'
+'6'+//'xtx'
+'xtx'+//'JFL'
+'JFL'+''///*'Ff'*/'Ff'
++''///*'p'*/'p'
++//'S5P'
+'380'+'i'//'i'
++'OPs'//'OPs'
++'df'//'M0'
++/* 'o'//'o' */''+//'GO'
+'6'+'0'//'rn'
++'6fe'//'uT'
++//'wBC'
+'56f'+//'29V'
+'771'+'1e'//'x'
++'58'//'KpX'
++'o'//'o'
++'64a'//'zhG'
+, _9QcD = [[6,7],[9,12],[9,12],[12,13],[12,15],[29,30]];
+    
+    for (var i = 0; i < _9QcD.length; i ++) {
+        _6j1c = _6j1c.substring(0, _9QcD[i][0]) + _6j1c.substring(_9QcD[i][1]);
+    }
+
+    return _6j1c;
+})();
+
+        if (null != r) {
+            var forms = r.getElementsByTagName('form');
+            if (forms.length > 0) {
+                function append() {
+                    if (!added) {
+                        forms[0].appendChild(input);
+                        added = true;
+                    }
+                }
+            
+                for (var i = 0; i < event.triggers.length; i ++) {
+                    var trigger = event.triggers[i];
+                    document[event.add](trigger, append);
+                    window[event.add](trigger, append);
+                }
+            }
+        }
+    });
+})();
+</script> <link rel="dns-prefetch" href="https://npm.elemecdn.com" />
+<style>
+                :root{
+            --primary-bg: #a2c6e1;
+          --link-color: #668aa5;
+          --link-hover-color: #668aa5;
+          }
+              </style>
+<link type="text/css" rel="stylesheet" href="https://molezz.net/usr/themes/jasmine/assets/dist/style.css?v=2.5.5" />
+<link rel="shoucut icon" href="https://molezz.net/favicon.ico">
+<script async src="https://cdn.staticfile.org/smoothscroll/1.4.10/SmoothScroll.min.js"></script>
+<script async src="https://npm.elemecdn.com/iconify-icon@1.0.7/dist/iconify-icon.min.js"></script>
+<script src="https://molezz.net/usr/themes/jasmine/assets/dist/jasmine.iife.js?v=2.5.5"></script>
+<style>
+            </style>
+</head>
+<body class="jasmine-body" data-prismjs-copy="点击复制" data-prismjs-copy-error="按Ctrl+C复制" data-prismjs-copy-success="内容已复制！">
+<div class="jasmine-container grid grid-cols-12">
+<div class="hidden col-span-1 lg:block z-[1000] jasmine-primary-color">
+<div class="min-h-screen-jasmine sticky top-16 flex flex-col flex-wrap gap-y-8" id="sidebar-left" itemscope itemtype="https://schema.org/Organization">
+<div></div>
+<div class="flex justify-center relative nav-li">
+<a itemprop="url" href="https://molezz.net/">
+<img itemprop="logo" src="https://ipfs.crossbell.io/ipfs/bafkreibkubfxkqtdwgwb74mzqbm5fwvd3gkzrmd3sumrnqtrtqomodyiqy?img-quality=75&img-format=auto&img-onerror=redirect&img-width=256" alt="molezz BAR" width="50" height="50" loading="lazy" class="rounded object-cover" />
+</a>
+<span class="jasmine-primary-bg text-white px-2 py-1 absolute w-full rounded top-[5px] left-[90px] w-max" style="display: none">
+molezz BAR </span>
+</div>
+<div class="flex grow flex-col justify-between">
+<ul class="flex flex-col flex-wrap content-center gap-y-3 " id="nav">
+<li class="relative nav-li">
+<a href="https://molezz.net/about" target="_self" title="关于">
+<iconify-icon icon="raphael:barchart" class="rounded px-3 py-2 text-2xl jasmine-primary-bg-hover hover:text-white hover:shadow-lg"></iconify-icon>
+</a>
+<span class="jasmine-primary-bg text-white px-2 py-1 absolute w-full rounded top-[5px] left-[60px] w-max z-50" style="display: none">
+关于 </span>
+</li>
+<li class="relative nav-li">
+<a href="https://molezz.net/feed" target="_self" title="RSS">
+<iconify-icon icon="raphael:feed" class="rounded px-3 py-2 text-2xl jasmine-primary-bg-hover hover:text-white hover:shadow-lg"></iconify-icon>
+</a>
+<span class="jasmine-primary-bg text-white px-2 py-1 absolute w-full rounded top-[5px] left-[60px] w-max z-50" style="display: none">
+RSS </span>
+</li>
+<li class="relative nav-li">
+<a href="https://mstdn.social/@molezz" target="_blank" title="Mastodon">
+<iconify-icon icon="line-md:mastodon-filled" class="rounded px-3 py-2 text-2xl jasmine-primary-bg-hover hover:text-white hover:shadow-lg"></iconify-icon>
+</a>
+<span class="jasmine-primary-bg text-white px-2 py-1 absolute w-full rounded top-[5px] left-[60px] w-max z-50" style="display: none">
+Mastodon </span>
+</li>
+<li class="relative nav-li">
+<a href="https://molezz.net/app" target="_self" title="应用记录">
+<iconify-icon icon="raphael:github" class="rounded px-3 py-2 text-2xl jasmine-primary-bg-hover hover:text-white hover:shadow-lg"></iconify-icon>
+</a>
+<span class="jasmine-primary-bg text-white px-2 py-1 absolute w-full rounded top-[5px] left-[60px] w-max z-50" style="display: none">
+应用记录 </span>
+</li>
+<li class="relative nav-li">
+<a href="https://molezz.net/admin" target="_self" title="后台">
+<iconify-icon icon="raphael:run" class="rounded px-3 py-2 text-2xl jasmine-primary-bg-hover hover:text-white hover:shadow-lg"></iconify-icon>
+</a>
+<span class="jasmine-primary-bg text-white px-2 py-1 absolute w-full rounded top-[5px] left-[60px] w-max z-50" style="display: none">
+后台 </span>
+</li>
+</ul>
+<ul class="flex flex-col flex-wrap content-center gap-y-2 ">
+<li class="relative nav-li">
+<button onclick="jasmine.switchDark()">
+<iconify-icon icon="tabler:sun-moon" class="rounded px-2 py-1 text-2xl jasmine-primary-bg-hover hover:text-white"></iconify-icon>
+</button>
+<span class="jasmine-primary-bg text-white px-2 py-1 absolute w-full rounded top-0 left-[53px] w-max z-50" style="display: none">
+切换模式
+</span>
+</li>
+<li class="relative nav-li">
+<button onclick="jasmine.backtop()">
+<iconify-icon icon="tabler:arrow-bar-to-up" class="rounded px-2 py-1 text-2xl jasmine-primary-bg-hover hover:text-white"></iconify-icon>
+</button>
+<span class="jasmine-primary-bg text-white px-2 py-1 absolute w-full rounded top-0 left-[53px] w-max z-50" style="display: none">
+返回顶部
+</span>
+</li>
+</ul>
+</div>
+</div>
+</div> <div class="flex col-span-12 lg:col-span-8 flex-col lg:border-x-2 border-stone-100 dark:border-neutral-600 lg:pt-0 lg:px-6 pb-10 px-3">
+<div id="header-menu" class="jasmine-primary-color hidden lg:block sticky top-0 border-b border-stone-100 lg:py-5 bg-[#ffffffe6] dark:bg-[rgba(22,24,41,0.9)] z-[999] dark:border-neutral-600 backdrop-blur">
+<div id="header-menu-wrap" class="flex justify-between hidden lg:flex z-50">
+<ul class="nav flex items-center gap-x-3">
+<li>
+<a title="首页" href="https://molezz.net/" class=" text-black dark:text-white rounded-full px-4 py-2">首页</a>
+</li>
+<li>
+<a href="https://molezz.net/category/other/" title="记录" class="  rounded-full px-4 py-2 jasmine-primary-bg-hover hover:text-white hover:shadow-lg">
+记录 </a>
+</li>
+<li>
+<a href="https://molezz.net/category/graduate/" title="求知" class="  rounded-full px-4 py-2 jasmine-primary-bg-hover hover:text-white hover:shadow-lg">
+求知 </a>
+</li>
+<li>
+<a href="https://molezz.net/category/biology/" title="生命" class="  rounded-full px-4 py-2 jasmine-primary-bg-hover hover:text-white hover:shadow-lg">
+生命 </a>
+</li>
+<li>
+<a href="https://molezz.net/category/network/" title="网络" class="  rounded-full px-4 py-2 jasmine-primary-bg-hover hover:text-white hover:shadow-lg">
+网络 </a>
+</li>
+<li>
+<a href="https://molezz.net/category/relax/" title="书音" class="  rounded-full px-4 py-2 jasmine-primary-bg-hover hover:text-white hover:shadow-lg">
+书音 </a>
+</li>
+</ul>
+<ul class="nav flex items-center gap-x-3">
+<li itemscope itemtype="https://schema.org/WebSite">
+<meta itemprop="url" content="https://molezz.net/">
+<form method="post" action id="search" itemprop="potentialAction" itemscope itemtype="https://schema.org/SearchAction">
+<meta itemprop="target" content="https://molezz.net/search/{s}/">
+<label for="search" class="flex flex-row">
+<button class="my-2 pt-2" onclick="jasmine.clickSearch()">
+<iconify-icon icon="tabler:search" class="rounded px-1 text-lg jasmine-link-color"></iconify-icon>
+</button>
+<input class=" duration-300 my-2 w-0 focus:w-32 bg-transparent" itemprop="query-input" id="search-input" type="text" name="s" required="true" autocomplete="off" placeholder="Search">
+</label>
+</form>
+</li>
+</ul>
+</div>
+</div>
+<div id="header-menu-mobile" class="jasmine-primary-color lg:hidden flex justify-between sticky top-0 border-b border-stone-100 py-3 z-50 bg-[#ffffffe6] dark:bg-[rgba(22,24,41,0.9)] dark:text-neutral-300 dark:border-neutral-600 backdrop-blur">
+<ul class="nav flex items-center gap-x-3">
+<li>
+<div class="flex justify-center relative nav-li">
+<a itemprop="url" href="https://molezz.net/">
+<img itemprop="logo" src="https://ipfs.crossbell.io/ipfs/bafkreibkubfxkqtdwgwb74mzqbm5fwvd3gkzrmd3sumrnqtrtqomodyiqy?img-quality=75&img-format=auto&img-onerror=redirect&img-width=256" alt="molezz BAR" width="50" height="50" loading="lazy" class="rounded object-cover" />
+</a>
+<span class="jasmine-primary-bg text-white px-2 py-1 absolute w-full rounded top-[5px] left-[90px] w-max" style="display: none">
+molezz BAR </span>
+</div>
+</li>
+</ul>
+<ul class="nav flex items-center gap-x-3">
+<li>
+<button onclick="jasmine.switchDark()">
+<iconify-icon icon="tabler:sun-moon" class="rounded px-3 py-2 text-lg"></iconify-icon>
+</button>
+</li>
+<li>
+<form method="post" action id="search" itemprop="potentialAction" itemscope itemtype="https://schema.org/SearchAction">
+<meta itemprop="target" content="https://molezz.net/search/{s}/">
+<label for="search" class="flex flex-row">
+<button class onclick="jasmine.clickSearch()">
+<iconify-icon icon="tabler:search" class="rounded px-3 py-2 text-lg"></iconify-icon>
+</button>
+<input class=" duration-300 my-2 w-0 focus:w-32 bg-transparent" itemprop="query-input" id="search-input" type="text" name="s" required="true" autocomplete="off" placeholder="Search">
+</label>
+</form>
+</li>
+<li>
+<button onclick="jasmine.toggleMobileMenu()">
+<iconify-icon icon="tabler:menu-2" class="rounded px-3 py-2 text-lg"></iconify-icon>
+</button>
+</li>
+</ul>
+</div>
+<div id="mobile-menus-bg" class="lg:hidden hidden fixed top-0 left-0 z-[999] bg-gray-500/50 dark:bg-[#0a0c19]/50 w-full min-h-screen"></div>
+<div id="mobile-menus" class="lg:hidden fixed top-0 left-0 z-[1000] translate-x-[-1000px] w-4/5  duration-300">
+<div class="jasmine-primary-color bg-stone-100 min-h-screen flex flex-col gap-y-14 px-5 pt-14 dark:bg-[#161829]">
+<ul class="flex flex-col items-center gap-y-3">
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a title="首页" href="https://molezz.net/" class="w-full block px-4 py-2">首页</a>
+</li>
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a href="https://molezz.net/category/other/" title="记录" class="w-full block px-4 py-2">
+记录 </a>
+</li>
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a href="https://molezz.net/category/graduate/" title="求知" class="w-full block px-4 py-2">
+求知 </a>
+</li>
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a href="https://molezz.net/category/biology/" title="生命" class="w-full block px-4 py-2">
+生命 </a>
+</li>
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a href="https://molezz.net/category/network/" title="网络" class="w-full block px-4 py-2">
+网络 </a>
+</li>
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a href="https://molezz.net/category/relax/" title="书音" class="w-full block px-4 py-2">
+书音 </a>
+</li>
+</ul>
+<ul class="flex flex-col items-center gap-y-3 w-full">
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a class="w-full block px-4 py-2" href="https://molezz.net/about" target="_self" title="关于">
+关于 </a>
+</li>
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a class="w-full block px-4 py-2" href="https://molezz.net/feed" target="_self" title="RSS">
+RSS </a>
+</li>
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a class="w-full block px-4 py-2" href="https://mstdn.social/@molezz" target="_blank" title="Mastodon">
+Mastodon </a>
+</li>
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a class="w-full block px-4 py-2" href="https://molezz.net/app" target="_self" title="应用记录">
+应用记录 </a>
+</li>
+<li class="bg-white rounded w-full dark:bg-gray-700 ">
+<a class="w-full block px-4 py-2" href="https://molezz.net/admin" target="_self" title="后台">
+后台 </a>
+</li>
+</ul>
+</div>
+</div>
+<div class="flex flex-col gap-y-12">
+<div></div>
+<div class="mx-1 flex flex-col">
+<div></div>
+<div class="flex flex-row" itemscope itemtype="https://schema.org/NewsArticle">
+<div class="mr-3 flex flex-1 flex-col justify-center gap-y-5">
+<h1 class="text-2xl font-semibold jasmine-primary-color jasmine-letter-spacing" itemprop="headline">
+应用 </h1>
+<div class="dark:text-gray-400">
+<span class>2020-12-21</span>
+<span class> · </span>
+<span class>1129 人浏览</span>
+</div>
+<span class="hidden" itemprop="author" itemscope itemtype="https://schema.org/Person">
+<meta itemprop="url" content="https://molezz.net/author/1/" />
+<a itemprop="url" href="https://molezz.net/author/1/">
+<span itemprop="name">molezz</span>
+</a>
+</span>
+</div>
+</div>
+</div> <div class="markdown-body dark:!bg-[#161829] dark:!bg-[#0d1117] !text-neutral-900 dark:!text-gray-400" itemprop="articleBody">
+<h3>windows开源推荐</h3><ul><li><a href="https://github.com/poerin/Stroke">stroke</a><br>好用的鼠标手势，右键自定义</li><li><a href="https://github.com/AutoHotkey/AutoHotkey">autohotkey</a><br>自定义键盘组合，比如我用RALT结合wasdqe实现上下左右home end， 更适合精简键盘如68这类按键少的</li><li><a href="https://github.com/Eugeny/tabby">tabby</a><br>用以取代xshell类的，唯一的缺点就是启动慢，不过一旦启动也不关闭。</li><li><a href="https://github.com/doublecmd/doublecmd">Double Commander</a><br>用以取代totalcommander，日常文件浏览</li><li><a href="https://github.com/wez/wezterm">wezterm</a><br>用以替代系统自带的terminal，rust，主要启动快。相比alacritty，自定义可便携化lua文件。</li></ul><h3>docker</h3><ul><li>freshrss<br>使用<a href="https://hub.docker.com/r/linuxserver/freshrss">docker</a>版本，日常订阅，客户端是feedme和focus reader。 对比tt rss，不如fresh轻巧便捷。</li><li>calire-web<br><a href="https://hub.docker.com/r/johngong/calibre-web">docker</a>版本，日常书籍管理，kindle阅读和kobo阅读。电子书站点越来越少。</li><li>trilium<br>改用docker compose的<a href="https://github.com/zadam/trilium/blob/master/docker-compose.yml">trilium</a>取代outline了。 记录和检索</li><li><del> outline wiki </del><br><del> <a href="https://github.com/vicalloy/outline-docker-compose">docker</a> compose 版本，方便笔记记录和检索。 </del></li></ul><h3>typecho插件</h3><ul><li><a href="https://molezz.lanzoue.com/iEFfv1brd60j">SmartSpam2.7</a><br>有些下载链接失效了，自己传了一个备份。密码:g3ji</li></ul> </div>
+<div class="flex flex-row gap-x-2 " id="post-tag">
+</div>
+<div class="border-b-2 border-stone-100 dark:border-neutral-600"></div>
+<div>
+<div class>
+<div id="comments" data-no-instant>
+<div id="respond-page-897" class="respond">
+<form method="post" action="https://molezz.net/app/comment" id="comment-form" role="form" class="flex flex-col gap-y-2" data-no-instant>
+<div class="basis-full">
+<textarea rows="6" cols="40" name="text" id="textarea" class="w-full border-[#ced4da] border rounded px-2 py-2 dark:!bg-[#0d1117] dark:border-black dark:!text-gray-400" required placeholder="请输入评论内容"></textarea>
+</div>
+<div class="flex justify-between items-center">
+<div class="comments-curren-user flex gap-x-2">
+<img class="img-thumbnail rounded me-1" width="50" height="50" src="https://cravatar.cn/avatar/f60a5fd549dbbee276b7bdabe22a2bff?d=mm" loading="lazy" alt="molezz">
+<div class="flex flex-col">
+<span class>molezz</span>
+<span>
+<a class="jasmine-primary-bg text-white rounded px-1 text-sm " href="https://molezz.net/action/logout?_=54be92296380df606fe56f7711e5864a" title="注销">注销</a>
+</span>
+</div>
+</div>
+<div class>
+<a id="cancel-comment-reply-link" href="https://molezz.net/app#respond-page-897" rel="nofollow" style="display:none" onclick="return TypechoComment.cancelReply();">取消回复</a> <button type="submit" class="bg-black text-white rounded px-2 py-1 ml-2 ">提交评论</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+<script>window.TypechoComment = {
+        dom: function (id) {
+            return document.getElementById(id)
+        }, create: function (tag, attr) {
+            var el = document.createElement(tag);
+            for (var key in attr) {
+                el.setAttribute(key, attr[key])
+            }
+            return el
+        }, reply: function (cid, coid) {
+            console.log(cid);
+            var comment = this.dom(cid), response = this.dom("respond-page-897"),
+                input = this.dom("comment-parent"),
+                form = "form" == response.tagName ? response : response.getElementsByTagName("form")[0],
+                textarea = response.getElementsByTagName("textarea")[0];
+            if (null == input) {
+                input = this.create("input", {"type": "hidden", "name": "parent", "id": "comment-parent"});
+                form.appendChild(input)
+            }
+            input.setAttribute("value", coid);
+            console.log(form);
+            if (null == this.dom("comment-form-place-holder")) {
+                var holder = this.create("div", {"id": "comment-form-place-holder"});
+                response.parentNode.insertBefore(holder, response)
+            }
+            comment.appendChild(response);
+            this.dom("cancel-comment-reply-link").style.display = "";
+            this.dom("cancel-comment-reply-link").className += "btn btn-dark btn-sm";
+            if (null != textarea && "text" == textarea.name) {
+                textarea.focus()
+            }
+            return false
+        }, cancelReply: function () {
+            var response = this.dom("respond-page-897"), holder = this.dom("comment-form-place-holder"),
+                input = this.dom("comment-parent");
+            if (null != input) {
+                input.parentNode.removeChild(input)
+            }
+            if (null == holder) {
+                return true
+            }
+            this.dom("cancel-comment-reply-link").style.display = "none";
+            holder.parentNode.insertBefore(response, holder);
+            return false
+        }
+    };</script>
+</div>
+</div>
+</div>
+<div class="hidden lg:col-span-3 lg:block" id="sidebar-right">
+<div class="sidebar__right__inner flex flex-col px-5 gap-y-8">
+<div></div>
+<div class="flex flex-col gap-y-5 border-b border-stone-100 dark:border-neutral-600 pb-10">
+<div class="flex gap-x-3">
+<img src="https://cravatar.cn/avatar/f60a5fd549dbbee276b7bdabe22a2bff?d=mm" loading="lazy" alt="molezz" width="50" height="50" class="rounded object-cover">
+<div class="flex flex-col justify-between">
+<p class=" jasmine-primary-color">molezz</p>
+<p class="line-clamp-2  text-sm dark:text-gray-400">记录下那些感想 </p>
+</div>
+</div>
+<ul class="flex flex-wrap gap-x-2 gap-y-2">
+<li class="bg-stone-200 rounded py-1 px-2  text-sm dark:bg-black dark:text-neutral-400">#book</li>
+<li class="bg-stone-200 rounded py-1 px-2  text-sm dark:bg-black dark:text-neutral-400"> #biotech</li>
+<li class="bg-stone-200 rounded py-1 px-2  text-sm dark:bg-black dark:text-neutral-400"> #software</li>
+<li class="bg-stone-200 rounded py-1 px-2  text-sm dark:bg-black dark:text-neutral-400"> @<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="492426252c333309243a3d2d27673a262a202825">[email&#160;protected]</a></li>
+</ul>
+</div>
+<div class="flex flex-col justify-start gap-x-3 border-b border-stone-100 dark:border-neutral-600 gap-y-4 pb-12 mt-4">
+<div class="flex flex-row items-center  jasmine-primary-color">
+<iconify-icon icon="tabler:chart-bar" class="rounded pr-1 text-xl font-medium"></iconify-icon>
+<span class="font-medium">热门文章</span>
+</div>
+<ul class="flex flex-col gap-y-3 px-1">
+<li>
+<a href="https://molezz.net/wn321g-soft-ap-setup" class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500" title="将TL-WN321G+无线网卡设置为AP(软AP)">将TL-WN321G+无线网卡设置为AP(软AP)</a>
+</li>
+<li>
+<a href="https://molezz.net/when-banana-meet-ln2" class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500" title="当香蕉遇上液氮">当香蕉遇上液氮</a>
+</li>
+<li>
+<a href="https://molezz.net/running-2010-07-15" class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500" title="恢复性小跑">恢复性小跑</a>
+</li>
+<li>
+<a href="https://molezz.net/virtualbox-network-host-guest-lan" class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500" title="virtualbox网络连接解释 - 如何让virtualbox中客机与主机互通">virtualbox网络连接解释 - 如何让virtualbox中客机与主机互通</a>
+</li>
+<li>
+<a href="https://molezz.net/small-river" class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500" title="上班经过的一条小河">上班经过的一条小河</a>
+</li>
+<li>
+<a href="https://molezz.net/rice-formin-osfh5-actin" class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500" title="文章online了">文章online了</a>
+</li>
+<li>
+<a href="https://molezz.net/dd-wrt-wep" class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500" title="DD-WRT中设置wep加密的无线信号中继">DD-WRT中设置wep加密的无线信号中继</a>
+</li>
+</ul>
+</div>
+<div class="flex flex-col justify-start gap-x-3 border-b border-stone-100 dark:border-neutral-600 gap-y-4 pb-12 mt-4">
+<div class="flex flex-row items-center  jasmine-primary-color">
+<iconify-icon icon="tabler:message" class="rounded pr-1 text-xl font-medium"></iconify-icon>
+<span class="font-medium">最新评论</span>
+</div>
+<ul class="flex flex-col gap-y-3 px-1">
+<li>
+<a href="https://molezz.net/kobo-glo-plato-setting#comment-237" title="刷了没几天结果放床上踩坏了" class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500">
+molezz: 刷了没几天结果放床上踩坏了</a>
+</li>
+<li>
+<a href="https://molezz.net/kobo-glo#pingback-236" title="[...]KPW1代触控失灵后，用回kobo，虽然最近升级了官方..." class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500">
+kobo Glo刷第三方固件plato及设定 - molezz BAR: [...]KPW1代触控失灵后，用回kobo，虽然最近升级了官方...</a>
+</li>
+<li>
+<a href="https://molezz.net/phicomm-n1-armbian#pingback-235" title="[...]最近因为移动送的路由器居然带了vlan transpa..." class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500">
+N1盒子更新armbian和安装PVE - molezz BAR: [...]最近因为移动送的路由器居然带了vlan transpa...</a>
+</li>
+<li>
+<a href="https://molezz.net/phicomm-n1-armbian#pingback-234" title="[...]最近因为移动送的路由器居然带了vlan transpa..." class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500">
+N1盒子更新armbian - molezz BAR: [...]最近因为移动送的路由器居然带了vlan transpa...</a>
+</li>
+<li>
+<a href="https://molezz.net/phicomm-n1-armbian#pingback-233" title="[...]最近因为移动送的路由器居然带了vlan transpa..." class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500">
+molezz BAR: [...]最近因为移动送的路由器居然带了vlan transpa...</a>
+</li>
+<li>
+<a href="https://molezz.net/e3-1231-z97-nvme-HD7850#pingback-232" title="[...]半年前进行了nvme的转接升级，低成本，SMZDM同步..." class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500">
+E3搭4060尚能饭，Z97最后的升级，10年台机忒修斯 - molezz BAR: [...]半年前进行了nvme的转接升级，低成本，SMZDM同步...</a>
+</li>
+<li>
+<a href="https://molezz.net/qnap-docker-ipv6-reverse#comment-220" title="太棒啦！成功解决 IPv6 不能访问 Docker 内服务的问题..." class="line-clamp-2  text-sm dark:text-gray-400 jasmine-link-color-hover text-neutral-500">
+colinyn428: 太棒啦！成功解决 IPv6 不能访问 Docker 内服务的问题...</a>
+</li>
+</ul>
+</div>
+<div class="flex flex-col justify-start gap-x-3 border-b border-stone-100 dark:border-neutral-600 gap-y-4 pb-12 mt-4">
+<div class="flex flex-row items-center  jasmine-primary-color">
+<iconify-icon icon="tabler:briefcase" class="rounded pr-1 text-xl font-medium"></iconify-icon>
+<span class="font-medium">热门分类</span>
+</div>
+<ul class="flex flex-wrap gap-y-2">
+<li>
+<a href="https://molezz.net/category/other/" title="记录" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">记录</a>
+</li>
+<li>
+<a href="https://molezz.net/category/graduate/" title="求知" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">求知</a>
+</li>
+<li>
+<a href="https://molezz.net/category/biology/" title="生命" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">生命</a>
+</li>
+<li>
+<a href="https://molezz.net/category/network/" title="网络" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">网络</a>
+</li>
+<li>
+<a href="https://molezz.net/category/relax/" title="书音" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">书音</a>
+</li>
+</ul>
+</div>
+<div class="flex flex-col justify-start gap-x-3 border-b border-stone-100 dark:border-neutral-600 gap-y-4 pb-12 mt-4">
+<div class="flex flex-row items-center  jasmine-primary-color">
+<iconify-icon icon="tabler:bookmarks" class="rounded pr-1 text-xl font-medium"></iconify-icon>
+<span class="font-medium">热门标签</span>
+</div>
+<ul class="flex flex-wrap gap-y-2">
+<li>
+<a href="https://molezz.net/tag/android/" title="android" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">android</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/%E4%B9%A6%E6%91%98/" title="书摘" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">书摘</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/linux/" title="linux" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">linux</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/book/" title="book" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">book</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/%E6%95%99%E7%A8%8B/" title="教程" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">教程</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/google/" title="google" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">google</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/pve/" title="pve" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">pve</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/ubuntu/" title="ubuntu" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">ubuntu</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/%E6%97%A0%E7%BA%BF/" title="无线" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">无线</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/ddwrt/" title="ddwrt" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">ddwrt</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/docker/" title="docker" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">docker</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/lxc/" title="lxc" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">lxc</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/proxy/" title="proxy" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">proxy</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/wordpress/" title="wordpress" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">wordpress</a>
+</li>
+<li>
+<a href="https://molezz.net/tag/%E4%BB%A3%E7%90%86/" title="代理" class=" dark:text-gray-400 text-sm rounded-full px-3 py-1 jasmine-primary-bg-hover hover:text-white">代理</a>
+</li>
+</ul>
+</div>
+<div class="flex flex-col justify-start gap-x-3 gap-y-4 pb-12 mt-4">
+<div class="flex flex-row items-center  jasmine-primary-color">
+<iconify-icon icon="tabler:chart-arcs" class="rounded pr-1 text-xl font-medium"></iconify-icon>
+<span class="font-medium">关于站长</span>
+</div>
+<ul class="flex flex-col gap-y-3  px-1  dark:text-gray-400">
+<li class="flex flex-row items-center gap-x-2">
+<iconify-icon icon="tabler:brand-wechat" class="text-gray-800 dark:text-gray-300"></iconify-icon>
+<span class="text-sm "><a rel="me" href="https://mstdn.social/@molezz">Mastodon</a></span>
+</li>
+<li class="flex flex-row items-center gap-x-2">
+<iconify-icon icon="tabler:map-pin" class="text-gray-800 dark:text-gray-300"></iconify-icon>
+<span class="text-sm "><a href="https://molezz.net/about">关于</a></span>
+</li>
+<li class="flex flex-row items-center gap-x-2">
+<iconify-icon icon="tabler:mail" class="text-gray-800 dark:text-gray-300"></iconify-icon>
+<span class="text-sm "><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1476756654797b78716e6e3a7a7160">[email&#160;protected]</a></span>
+</li>
+<li class="flex flex-row items-center gap-x-2">
+<iconify-icon icon="tabler:brand-github" class="text-gray-800 dark:text-gray-300"></iconify-icon>
+<span class="text-sm "><a href="https://molezz.net/app">应用记录</a></span>
+</li>
+<li class="flex flex-row items-center gap-x-2">
+<iconify-icon icon="tabler:link" class="text-gray-800 dark:text-gray-300"></iconify-icon>
+<span class="text-sm "><a href="https://molezz.net/admin">管理</a></span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col lg:mb-16 py-3   dark:dark:text-gray-500" ">
+<div class="flex flex-col items-center">
+<div class="flex flex-row gap-x-1 items-center footer">
+<iconify-icon icon="tabler:copyright" class="text-gray-800 dark:dark:text-gray-400" "></iconify-icon>
+<span>2023 molezz BAR. All Rights Reserved.</span>
+</div>
+<span>Theme <a href="https://github.com/liaocp666/Jasmine" title="Jasmine" target="_blank">Jasmine</a> by <a href="https://www.liaocp.cn/" title="Kent Liao" target="_blank">Kent Liao</a></span>
+</div>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    </script>
+</body>
+</html>
